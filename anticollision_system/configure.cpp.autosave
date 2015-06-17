@@ -1,0 +1,106 @@
+#include "configure.h"
+#include "ui_configure.h"
+#include "mainwindow.h"
+
+
+Configure::Configure(QWidget *parent) :
+    QDialog(parent),
+    ui(new Ui::Configure)
+{
+    ui->setupUi(this);
+
+    settings.BaudRate = BAUD9600;
+    settings.DataBits = DATA_8;
+    settings.Parity = PAR_NONE;
+    settings.StopBits = STOP_1;
+    settings.FlowControl = FLOW_OFF;
+    settings.Timeout_Millisec = 10;
+    this->father = father;
+    listPorts();
+}
+
+Configure::~Configure()
+{
+    delete ui;
+}
+
+void Configure::listPorts()
+{
+    foreach(QextPortInfo info,QextSerialEnumerator::getPorts()){
+        ui->portBox->addItem(info.portName);
+    }
+
+    ui->portBox->setEditable(true);
+    ui->baudRateBox->addItem("1200", BAUD1200);
+    ui->baudRateBox->addItem("2400", BAUD2400);
+    ui->baudRateBox->addItem("4800", BAUD4800);
+    ui->baudRateBox->addItem("9600", BAUD9600);
+    ui->baudRateBox->addItem("19200", BAUD19200);
+    ui->baudRateBox->setCurrentIndex(3);
+
+    ui->parityBox->addItem("NONE", PAR_NONE);
+    ui->parityBox->addItem("ODD", PAR_ODD);
+    ui->parityBox->addItem("EVEN", PAR_EVEN);
+
+    ui->dataBitsBox->addItem("5", DATA_5);
+    ui->dataBitsBox->addItem("6", DATA_6);
+    ui->dataBitsBox->addItem("7", DATA_7);
+    ui->dataBitsBox->addItem("8", DATA_8);
+    ui->dataBitsBox->setCurrentIndex(3);
+
+    ui->stopBitsBox->addItem("1", STOP_1);
+    ui->stopBitsBox->addItem("2", STOP_2);
+}
+
+void Configure::displayAtCenter()
+{
+    setGeometry(father->width()/2-width()/2,
+                father->height()/2-height()/2,
+                width(),height());
+}
+
+void Configure::initializeConnections()
+{
+    connect(ui->baudRateBox,SIGNAL(currentIndexChanged(int)),
+            this,SLOT(onBaudRateChanged(int)));
+    connect(ui->dataBitsBox,SIGNAL(currentIndexChanged(int)),
+            this,SLOT(onDataBitsChanged(int)));
+    connect(ui->parityBox,SIGNAL(currentIndexChanged(int)),
+            this,SLOT(onParityChanged(int)));
+    connect(ui->stopBitsBox,SIGNAL(currentIndexChanged(int)),
+            this,SLOT(onStopBitsChanged(int)));
+    connect(ui->timeoutBox,SIGNAL(valueChanged(int)),
+            this,SLOT(onTimeoutChanged(int)));
+}
+
+void Configure::on_buttonBox_accepted()
+{
+
+    emit sendPortSetting(ui->portBox->currentText(),target,settings);
+}
+
+void Configure::onBaudRateChanged(int idx)
+{
+    settings.BaudRate=(BaudRateType)ui->baudRateBox->itemData(idx).toInt();
+}
+
+void Configure::onParityChanged(int idx)
+{
+    settings.Parity = (ParityType)ui->parityBox->itemData(idx).toInt();
+}
+
+void Configure::onDataBitsChanged(int idx)
+{
+    settings.DataBits = (DataBitsType)ui->dataBitsBox->itemData(idx).toInt();
+}
+
+void Configure::onStopBitsChanged(int idx)
+{
+    settings.StopBits = (StopBitsType)ui->stopBitsBox->itemData(idx).toInt();
+    qDebug() << ui->stopBitsBox->itemData(idx).toInt();
+}
+
+void Configure::onTimeoutChanged(int val)
+{
+    settings.Timeout_Millisec = val;
+}
